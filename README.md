@@ -1,4 +1,4 @@
-# Blender based Render for generating point cloud, mesh and voxel
+# Blender based Render for generating rendering images directly of point cloud, mesh and voxel
 
 ## Setup Blender:
 * Download Blender last [release](https://www.blender.org/download/)
