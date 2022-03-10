@@ -12,6 +12,9 @@ Tested with Python 3.8.6 and Blender 3.0.1
 * `pip install numpy`
 * `pip install hesiod` 
 
+## Add folder to PythonPath:
+* `PYTHONPATH="${PYTHONPATH}:/path_to/shapes_render`
+
 ### Useful Resources:
 * [ShapeNet Rendering](https://github.com/panmari/stanford-shapenet-renderer/blob/master/render_blender.py) with depth, albedo and RGB
 * [Collection](https://github.com/yuki-koyama/blender-cli-rendering) of Blender Python scripts for generating scenes and rendering images directly from command-line interface
