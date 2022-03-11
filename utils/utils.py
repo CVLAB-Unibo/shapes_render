@@ -5,7 +5,7 @@ Author: Riccardo Spezialetti
 Mail: riccardo.spezialetti@unibo.it
 """
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Tuple
 
 import bpy  # type: ignore
 
@@ -101,3 +101,63 @@ def set_engine_properties(
             devices_enable.append(dev["name"])
 
     print(f"Devices for rendering: {devices_enable}")
+
+
+def add_track_to_constraint(
+    camera_object: bpy.types.Object, track_to_target_object: bpy.types.Object
+) -> None:
+    constraint = camera_object.constraints.new(type="TRACK_TO")
+    constraint.target = track_to_target_object
+    constraint.track_axis = "TRACK_NEGATIVE_Z"
+    constraint.up_axis = "UP_Y"
+
+
+def create_camera(
+    location: Tuple[float, float, float], rotation: Tuple[float, float, float]
+) -> bpy.types.Object:
+    bpy.ops.object.camera_add(location=location, rotation=rotation, scale=(0.4, 0, 0))
+
+    bpy.ops.object.camera_add()
+    cam = bpy.data.objects["Camera"]
+    cam.rotation_mode = "XYZ"
+
+    # cam.location.x = location[0]
+    # cam.location.y = location[1]
+    # cam.location.z = location[2]
+
+    # cam.rotation_euler[0] = rotation[0]
+    # cam.rotation_euler[1] = rotation[1]
+    # cam.rotation_euler[2] = rotation[2]
+    print(cam.location)
+    print(cam.rotation_euler)
+    return cam
+
+
+def set_camera_params(
+    camera: bpy.types.Camera,
+    focus_target_object: bpy.types.Object,
+    lens: float = 85.0,
+    fstop: float = 1.4,
+) -> None:
+    # Simulate Sony's FE 85mm F1.4 GM
+    camera.sensor_fit = "HORIZONTAL"
+    camera.sensor_width = 36.0
+    camera.sensor_height = 24.0
+    camera.lens = lens
+    camera.dof.use_dof = True
+    camera.dof.focus_object = focus_target_object
+    camera.dof.aperture_fstop = fstop
+    camera.dof.aperture_blades = 11
+
+
+def create_sun_light(
+    location: Tuple[float, float, float] = (0.0, 0.0, 5.0),
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    name: Optional[str] = None,
+) -> bpy.types.Object:
+    bpy.ops.object.light_add(type="SUN", location=location, rotation=rotation)
+
+    if name is not None:
+        bpy.context.object.name = name
+
+    return bpy.context.object
