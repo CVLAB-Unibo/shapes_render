@@ -4,6 +4,8 @@ Module containing generic utils.
 Author: Riccardo Spezialetti
 Mail: riccardo.spezialetti@unibo.it
 """
+import math
+import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -18,7 +20,7 @@ def remove_objects() -> None:
         bpy.data.objects.remove(item)
 
 
-def set_render_properties(
+def set_render_params(
     scene: bpy.types.Scene,
     path_render: Path,
     use_transparent_bg: bool = False,
@@ -46,7 +48,7 @@ def set_render_properties(
     scene.render.film_transparent = use_transparent_bg
 
 
-def set_engine_properties(
+def set_engine_params(
     scene: bpy.types.Scene,
     num_samples: int = 4096,
     ids_cuda_devices: List[int] = [],
@@ -112,24 +114,10 @@ def add_track_to_constraint(
     constraint.up_axis = "UP_Y"
 
 
-def create_camera(
-    location: Tuple[float, float, float], rotation: Tuple[float, float, float]
-) -> bpy.types.Object:
-    bpy.ops.object.camera_add(location=location, rotation=rotation, scale=(0.4, 0, 0))
-
-    bpy.ops.object.camera_add()
+def create_camera(location: Tuple[float, float, float]) -> bpy.types.Object:
+    bpy.ops.object.camera_add(location=location)
     cam = bpy.data.objects["Camera"]
-    cam.rotation_mode = "XYZ"
 
-    # cam.location.x = location[0]
-    # cam.location.y = location[1]
-    # cam.location.z = location[2]
-
-    # cam.rotation_euler[0] = rotation[0]
-    # cam.rotation_euler[1] = rotation[1]
-    # cam.rotation_euler[2] = rotation[2]
-    print(cam.location)
-    print(cam.rotation_euler)
     return cam
 
 
@@ -141,23 +129,70 @@ def set_camera_params(
 ) -> None:
     # Simulate Sony's FE 85mm F1.4 GM
     camera.sensor_fit = "HORIZONTAL"
-    camera.sensor_width = 36.0
-    camera.sensor_height = 24.0
-    camera.lens = lens
+    # camera.sensor_width = 36.0
+    # camera.sensor_height = 24.0
+    # camera.lens = lens
     camera.dof.use_dof = True
     camera.dof.focus_object = focus_target_object
-    camera.dof.aperture_fstop = fstop
-    camera.dof.aperture_blades = 11
+    # camera.dof.aperture_fstop = fstop
+    # camera.dof.aperture_blades = 11
 
 
-def create_sun_light(
+def create_light(
     location: Tuple[float, float, float] = (0.0, 0.0, 5.0),
     rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    energy: float = 4.0,
     name: Optional[str] = None,
 ) -> bpy.types.Object:
-    bpy.ops.object.light_add(type="SUN", location=location, rotation=rotation)
+    # Create a light
+    light_data = bpy.data.lights.new("light", type="SUN")
+    light_data.use_shadow = True
+    light_data.specular_factor = 1.0
+    light_data.energy = energy
+    light_data.use_shadow = True
+
+    light = bpy.data.objects.new("light", light_data)
+    light.location = location
+    light.rotation_euler = rotation
+
+    return light
+
+
+def create_plane(
+    location: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    size: float = 2.0,
+    name: Optional[str] = None,
+) -> bpy.types.Object:
+
+    bpy.ops.mesh.primitive_plane_add(size=size, location=location, rotation=rotation)
+    current_object = bpy.context.object
 
     if name is not None:
-        bpy.context.object.name = name
+        current_object.name = name
 
-    return bpy.context.object
+    return current_object
+
+
+def add_material(
+    name: str = "Material", use_nodes: bool = False, make_node_tree_empty: bool = False
+) -> bpy.types.Material:
+    """
+    https://docs.blender.org/api/current/bpy.types.BlendDataMaterials.html
+    https://docs.blender.org/api/current/bpy.types.Material.html
+    """
+
+    # TODO: Check whether the name is already used or not
+
+    material = bpy.data.materials.new(name)
+    material.use_nodes = use_nodes
+
+    if use_nodes and make_node_tree_empty:
+        clean_nodes(material.node_tree.nodes)
+
+    return material
+
+
+def clean_nodes(nodes: bpy.types.Nodes) -> None:
+    for node in nodes:
+        nodes.remove(node)
