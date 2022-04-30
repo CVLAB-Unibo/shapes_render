@@ -41,7 +41,7 @@ make update
 cd ..
 mkdir build
 cd build
-cmake -C ../blender/build_files/cmake/config/bpy_module.cmake  
+cmake -C ../blender/build_files/cmake/config/bpy_module.cmake  ../blender
 ccmake .
 
 PYTHON_EXECUTABLE=/home/rspezialetti/.pyenv/versions/3.9.0/bin/python3.9 
