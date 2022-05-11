@@ -32,7 +32,7 @@ mkdir blender-git
 cd blender-git
 cd blender
 # Checkout that specific version
-git checkout blender-v2.93-release
+git checkout blender-v2.93-release Optix 7.2.0
 cd ..
 # Download the libraries
 mkdir lib
@@ -56,6 +56,10 @@ PYTHON_LIBPATH=/home/marcello/.pyenv/versions/3.9.0/include/python3.9/lib
 PYTHON_LIBRARY=/home/marcello/.pyenv/versions/3.9.0/lib/libpython3.9.a
 # This is the folder containing the create virtual env, bpy module will be installed here
 PYTHON_SITE_PACKAGES=/home/marcello/dev/shapes_render/.venv/lib/python3.9/site-packages
+# Setup the optix denoiser (optional)
+WITH_CYCLES_DEVICE_OPTIX = TRUE
+# Download optix from NVIDIA
+OPTIX_INCLUDE_DIR=/home/marcello/dev/blender-git/NVIDIA-OptiX-SDK-7.2.0-linux64-x86_64/include
 
 # Save and Generate
 make -j 8
