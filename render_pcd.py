@@ -12,7 +12,6 @@ from utils.utils import (
     create_light,
     create_material,
     create_plane,
-    get_colored_mesh,
     pcd_to_sphere,
     remove_objects,
     set_camera_params,
@@ -44,6 +43,7 @@ def main():
     use_denoiser = True
     base_color = (0.0, 1.0, 0.0, 1.0)
     lens = 85
+    plane_only_shadow = False
 
     # Reset
     remove_objects()
@@ -86,7 +86,8 @@ def main():
     if add_plane:
         z_plane = (focus_target_object.dimensions[-1] * 0.5) + 0.1
         loc_plane = (0.0, 0.0, -z_plane)
-        create_plane(size=1.0, location=loc_plane)
+        create_plane(size=100.0, location=loc_plane)
+        bpy.context.object.cycles.is_shadow_catcher = plane_only_shadow
 
     # Camera
     camera_object = create_camera(location=location_camera)

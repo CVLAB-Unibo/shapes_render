@@ -4,12 +4,13 @@ Module containing generic utils.
 Author: Riccardo Spezialetti
 Mail: riccardo.spezialetti@unibo.it
 """
-import math
-import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 import bpy  # type: ignore
+import numpy as np
+
+import bmesh  # isort: skip
 
 
 def remove_objects() -> None:
@@ -128,20 +129,13 @@ def create_camera(location: Tuple[float, float, float]) -> bpy.types.Object:
 
 
 def set_camera_params(
-    camera: bpy.types.Camera,
-    focus_target_object: bpy.types.Object,
-    lens: float = 85.0,
-    fstop: float = 1.4,
+    camera: bpy.types.Camera, focus_target_object: bpy.types.Object, lens: float = 85.0
 ) -> None:
-    # Simulate Sony's FE 85mm F1.4 GM
+
     camera.sensor_fit = "HORIZONTAL"
-    # camera.sensor_width = 36.0
-    # camera.sensor_height = 24.0
-    # camera.lens = lens
+    camera.lens = lens
     camera.dof.use_dof = True
     camera.dof.focus_object = focus_target_object
-    # camera.dof.aperture_fstop = fstop
-    # camera.dof.aperture_blades = 11
 
 
 def create_light(
@@ -244,27 +238,6 @@ def create_new_image_material(name="asd", alpha=1.0):
     links = mat.node_tree.links
     link = links.new(bsdf.outputs[0], node_output.inputs[0])
     return mat
-
-
-def add_new_material(
-    name: str = "Material", shadow: bool = False, diffuse: bool = True, alpha: float = 1.0
-) -> bpy.types.Material:
-    material = bpy.data.materials.new(name)
-    material.diffuse_color = (0.66, 0.45, 0.23, 1.0)
-    material.use_nodes = True
-    # material.diffuse_shader = "LAMBERT"
-    # material.diffuse_intensity = 1
-    material.specular_color = (1, 1, 1)
-    # material.specular_shader = "COOKTORR"
-    material.specular_intensity = 2
-    # material.alpha = alpha
-    # material.use_transparency = True
-    # material.ambient = 1.0
-
-    # material.use_cast_shadows = shadow
-    # material.use_shadows = shadow
-
-    return material
 
 
 def create_material(
@@ -379,4 +352,92 @@ def load_mesh(path_mesh: Path) -> bpy.types.Object:
     bpy.ops.object.empty_add(location=(0.0, 0.0, 0.0))
     focus_target = current_object
 
+    return focus_target
+
+
+def pcd_to_sphere(
+    pcd: np.ndarray, radius, offset=(0.0, 0.0, 0.0), scale: float = 1.0
+) -> bpy.types.Object:
+
+    mesh = bmesh.new()
+
+    bpy.ops.mesh.primitive_ico_sphere_add()
+    sphere_base_mesh = bpy.context.scene.objects["Icosphere"].data
+
+    for face in sphere_base_mesh.polygons:
+        face.use_smooth = True
+
+    for p in pcd:
+        location = (p[0] * scale + offset[0], p[1] * scale + offset[1], p[2] * scale + offset[2])
+
+        m = sphere_base_mesh.copy()
+
+        for vertex in m.vertices:
+            vertex.co[0] = vertex.co[0] * radius + location[0]
+            vertex.co[1] = vertex.co[1] * radius + location[1]
+            vertex.co[2] = vertex.co[2] * radius + location[2]
+
+        if pcd.shape[1] > 3:
+            m.vertex_colors.new(name="Col")
+            for vertex_color in m.vertex_colors["Col"].data:
+                vertex_color.color = (p[3], p[4], p[5], 1.0)
+
+        mesh.from_mesh(m)
+
+    mesh_spheres = bpy.data.meshes.new("Mesh")
+    mesh.to_mesh(mesh_spheres)
+
+    obj = bpy.data.objects.new("BRC_Point_Cloud", mesh_spheres)
+    obj.name = "object"
+    bpy.context.collection.objects.link(obj)
+
+    bpy.ops.object.empty_add(location=(0.0, 0.0, 0.0))
+    focus_target = obj
+
+    bpy.data.objects.remove(bpy.context.scene.objects["Icosphere"])
+
+    return focus_target
+
+
+def voxels_to_cube(
+    voxels: np.ndarray, radius: float, offset=(0.0, 0.0, 0.0), scale: float = 1.0
+) -> bpy.types.Object:
+
+    points = np.where(voxels)
+    locations = np.zeros((points[0].shape[0], 3), dtype=float)
+    locations[:, 0] = (points[0][:] + 0.5) / voxels.shape[0]
+    locations[:, 1] = (points[1][:] + 0.5) / voxels.shape[1]
+    locations[:, 2] = (points[2][:] + 0.5) / voxels.shape[2]
+    locations[:, 0] -= 0.5
+    locations[:, 1] -= 0.5
+    locations[:, 2] -= 0.5
+
+    locations[:, 0] = locations[:, 0] * scale + offset[0]
+    locations[:, 1] = locations[:, 1] * scale + offset[1]
+    locations[:, 2] = locations[:, 2] * scale + offset[2]
+
+    mesh = bmesh.new()
+
+    bpy.ops.mesh.primitive_cube_add()
+    cube_base_mesh = bpy.context.scene.objects["Cube"].data
+
+    for i in range(locations.shape[0]):
+        m = cube_base_mesh.copy()
+        for vertex in m.vertices:
+            vertex.co[0] = vertex.co[0] * radius + locations[i, 0]
+            vertex.co[1] = vertex.co[1] * radius + locations[i, 1]
+            vertex.co[2] = vertex.co[2] * radius + locations[i, 2]
+
+        mesh.from_mesh(m)
+
+    bpy.data.objects.remove(bpy.context.scene.objects["Cube"])
+
+    mesh_cubes = bpy.data.meshes.new("Mesh")
+    mesh.to_mesh(mesh_cubes)
+
+    obj = bpy.data.objects.new("BRC_Occupancy", mesh_cubes)
+    obj.name = "object"
+
+    bpy.context.collection.objects.link(obj)
+    focus_target = obj
     return focus_target

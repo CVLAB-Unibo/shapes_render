@@ -27,17 +27,14 @@ def main():
     res_x = int(800)
     res_y = int(800)
     devices = [0]
-
-    # Location Camera
     location_camera = (0, 4.0, 1.0)
-
-    # Location Light
     loc_light = (0, 0, 2)
     rot_light = (math.radians(0), math.radians(0), math.radians(0))
     energy = 3.0
     save_blender = False
     add_plane = True
     use_denoiser = True
+    lens = 85
 
     # Reset
     remove_objects()
@@ -51,14 +48,13 @@ def main():
     # Location Plane
     if add_plane:
         z_plane = (focus_target_object.dimensions[-1] * 0.5) + 0.1
-        print(z_plane)
         loc_plane = (0.0, 0.0, -z_plane)
         create_plane(size=1.0, location=loc_plane)
 
     # Camera
     camera_object = create_camera(location=location_camera)
     add_track_to_constraint(camera_object, focus_target_object)
-    set_camera_params(camera_object.data, focus_target_object, lens=85, fstop=5)
+    set_camera_params(camera_object.data, focus_target_object, lens=lens)
     scene = bpy.data.scenes["Scene"]
     scene.camera = camera_object
 
