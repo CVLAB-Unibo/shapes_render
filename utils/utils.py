@@ -53,6 +53,7 @@ def set_engine_params(
     num_samples: int = 4096,
     ids_cuda_devices: List[int] = [],
     use_adaptive_sampling: bool = False,
+    use_denoiser: bool = True,
 ) -> None:
     """Set Engine properties.
 
@@ -61,6 +62,7 @@ def set_engine_params(
         num_samples: The number of samples to render for cycles. Defaults to 4096.
         ids_cuda_devices: Ids to use for rendering, if empty use all the availabe devices. Defaults to [].
         use_adaptive_sampling: If True use adaptive sampling. Defaults to False.
+        use_denoiser: If True use optix denoiser. Defaults to True.
 
     Raises:
         ValueError: if adaptive sampling is False and the number of samples is zero.
@@ -101,6 +103,10 @@ def set_engine_params(
     for dev in bpy.context.preferences.addons["cycles"].preferences.devices:
         if dev["use"]:
             devices_enable.append(dev["name"])
+
+    if use_denoiser:
+        scene.cycles.use_denoising = True
+        scene.cycles.denoiser = "OPTIX"
 
     print(f"Devices for rendering: {devices_enable}")
 
@@ -158,6 +164,42 @@ def create_light(
     return light
 
 
+def create_light_area_vox(
+    location: Tuple[float, float, float] = (0.0, 0.0, 5.0),
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    energy: float = 50.0,
+    name: Optional[str] = None,
+) -> bpy.types.Object:
+    # Create a light
+    light_data = bpy.data.lights.new("light", type="AREA")
+    light_data.energy = energy
+    light_data.shape = "DISK"
+    light_data.size = 1.50
+
+    light = bpy.data.objects.new(name, light_data)
+    light.location = location
+    light.rotation_euler = rotation
+
+    return light
+
+
+def create_light_area(
+    location: Tuple[float, float, float] = (0.0, 0.0, 5.0),
+    rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    energy: float = 50.0,
+    name: Optional[str] = None,
+) -> bpy.types.Object:
+    # Create a light
+    light_data = bpy.data.lights.new("light", type="AREA")
+    light_data.energy = energy
+
+    light = bpy.data.objects.new(name, light_data)
+    light.location = location
+    light.rotation_euler = rotation
+
+    return light
+
+
 def create_plane(
     location: Tuple[float, float, float] = (0.0, 0.0, 0.0),
     rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -174,7 +216,58 @@ def create_plane(
     return current_object
 
 
-def add_material(
+def create_new_image_material(name="asd", alpha=1.0):
+    """Create a new material.
+    Args:
+        name: name of material
+        fname: path to image to load
+    Returns:
+        The new material.
+    """
+
+    nodescale = 300
+
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    nodes.clear()
+
+    bsdf = nodes.new(type="ShaderNodeBsdfPrincipled")
+    bsdf.location = 2 * nodescale, 0
+    # bsdf.inputs[0].default_value = color
+    bsdf.inputs["Alpha"].default_value = alpha
+    bsdf.inputs["Specular"].default_value = 0.0
+
+    node_output = nodes.new(type="ShaderNodeOutputMaterial")
+    node_output.location = 3 * nodescale, 0
+
+    links = mat.node_tree.links
+    link = links.new(bsdf.outputs[0], node_output.inputs[0])
+    return mat
+
+
+def add_new_material(
+    name: str = "Material", shadow: bool = False, diffuse: bool = True, alpha: float = 1.0
+) -> bpy.types.Material:
+    material = bpy.data.materials.new(name)
+    material.diffuse_color = (0.66, 0.45, 0.23, 1.0)
+    material.use_nodes = True
+    # material.diffuse_shader = "LAMBERT"
+    # material.diffuse_intensity = 1
+    material.specular_color = (1, 1, 1)
+    # material.specular_shader = "COOKTORR"
+    material.specular_intensity = 2
+    # material.alpha = alpha
+    # material.use_transparency = True
+    # material.ambient = 1.0
+
+    # material.use_cast_shadows = shadow
+    # material.use_shadows = shadow
+
+    return material
+
+
+def create_material(
     name: str = "Material", use_nodes: bool = False, make_node_tree_empty: bool = False
 ) -> bpy.types.Material:
     """
@@ -183,7 +276,6 @@ def add_material(
     """
 
     # TODO: Check whether the name is already used or not
-
     material = bpy.data.materials.new(name)
     material.use_nodes = use_nodes
 
@@ -196,3 +288,95 @@ def add_material(
 def clean_nodes(nodes: bpy.types.Nodes) -> None:
     for node in nodes:
         nodes.remove(node)
+
+
+def set_principled_node_as_rough_blue(principled_node: bpy.types.Node) -> None:
+    set_principled_node(
+        principled_node=principled_node,
+        metallic=0.5,
+        specular=1.0,
+        roughness=1.0,
+    )
+
+
+def set_principled_node_as_glass(principled_node: bpy.types.Node) -> None:
+    set_principled_node(
+        principled_node=principled_node,
+        base_color=(0.95, 0.95, 0.95, 1.0),
+        metallic=0.0,
+        specular=0.5,
+        roughness=0.0,
+        clearcoat=0.5,
+        clearcoat_roughness=0.030,
+        ior=1.45,
+        transmission=0.98,
+    )
+
+
+def set_principled_node(
+    principled_node: bpy.types.Node,
+    base_color: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 1.0),
+    subsurface: float = 0.0,
+    subsurface_color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1.0),
+    subsurface_radius: Tuple[float, float, float] = (1.0, 0.2, 0.1),
+    metallic: float = 0.0,
+    specular: float = 0.5,
+    specular_tint: float = 0.0,
+    roughness: float = 0.5,
+    anisotropic: float = 0.0,
+    anisotropic_rotation: float = 0.0,
+    sheen: float = 0.0,
+    sheen_tint: float = 0.5,
+    clearcoat: float = 0.0,
+    clearcoat_roughness: float = 0.03,
+    ior: float = 1.45,
+    transmission: float = 0.0,
+    transmission_roughness: float = 0.0,
+) -> None:
+    principled_node.inputs["Base Color"].default_value = base_color
+    principled_node.inputs["Subsurface"].default_value = subsurface
+    principled_node.inputs["Subsurface Color"].default_value = subsurface_color
+    principled_node.inputs["Subsurface Radius"].default_value = subsurface_radius
+    principled_node.inputs["Metallic"].default_value = metallic
+    principled_node.inputs["Specular"].default_value = specular
+    principled_node.inputs["Specular Tint"].default_value = specular_tint
+    principled_node.inputs["Roughness"].default_value = roughness
+    principled_node.inputs["Anisotropic"].default_value = anisotropic
+    principled_node.inputs["Anisotropic Rotation"].default_value = anisotropic_rotation
+    principled_node.inputs["Sheen"].default_value = sheen
+    principled_node.inputs["Sheen Tint"].default_value = sheen_tint
+    principled_node.inputs["Clearcoat"].default_value = clearcoat
+    principled_node.inputs["Clearcoat Roughness"].default_value = clearcoat_roughness
+    principled_node.inputs["IOR"].default_value = ior
+    principled_node.inputs["Transmission"].default_value = transmission
+    principled_node.inputs["Transmission Roughness"].default_value = transmission_roughness
+
+
+def set_principled_node_as_gold(principled_node: bpy.types.Node) -> None:
+    set_principled_node(
+        principled_node=principled_node,
+        base_color=(1.00, 0.71, 0.22, 1.0),
+        metallic=1.0,
+        specular=0.5,
+        roughness=0.1,
+    )
+
+
+def load_mesh(path_mesh: Path) -> bpy.types.Object:
+
+    bpy.ops.import_mesh.ply(filepath=str(path_mesh))
+    current_object = bpy.context.object
+    current_object.name = "object"
+    mat = create_material("Material_Right", use_nodes=True, make_node_tree_empty=True)
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    output_node = nodes.new(type="ShaderNodeOutputMaterial")
+    principled_node = nodes.new(type="ShaderNodeBsdfPrincipled")
+    set_principled_node(principled_node, base_color=(0.5, 0.5, 0.5, 1))
+    links.new(principled_node.outputs["BSDF"], output_node.inputs["Surface"])
+    current_object.data.materials.append(mat)
+
+    bpy.ops.object.empty_add(location=(0.0, 0.0, 0.0))
+    focus_target = current_object
+
+    return focus_target
