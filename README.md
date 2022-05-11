@@ -20,9 +20,11 @@ Tested with Python 3.8.6 and Blender 2.93.10
 * [Collection](https://github.com/yuki-koyama/blender-cli-rendering) of Blender Python scripts for generating scenes and rendering images directly from command-line interface
 
 # Creat a virutalenv
+```
 OPT="-fPIC" pyenv install 3.9.0
 pyenv local 3.9.0
 python -m venv .venv
+```
 
 # Install Blender bpy from sources
 ```
