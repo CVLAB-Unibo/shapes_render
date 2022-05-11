@@ -1,6 +1,6 @@
 # Blender based Render for generating rendering images directly for point cloud, mesh and voxel
 
-Tested with Python 3.8.6 and Blender 2.93.10
+Tested with Python 3.9.0 Blender 2.93.10 andOptix 7.2.0
 
 ## Setup Blender:
 * Download Blender last [release](https://www.blender.org/download/)
@@ -32,9 +32,11 @@ python -m venv .venv
 # Create a folder and pull blender from github
 mkdir blender-git
 cd blender-git
+# Clone from git
+git clone https://git.blender.org/blender.git
 cd blender
 # Checkout that specific version
-git checkout blender-v2.93-release Optix 7.2.0
+git checkout blender-v2.93-release
 cd ..
 # Download the libraries
 mkdir lib
