@@ -1,6 +1,6 @@
 # Blender based Render for generating rendering images directly for point cloud, mesh and voxel
 
-Tested with Python 3.9.0 Blender 2.93.10 andOptix 7.2.0
+Tested with Python 3.9.0 Blender 2.93.10, Optix 7.2.0 and GCC 9.4.0
 
 ## Setup Blender:
 * Download Blender last [release](https://www.blender.org/download/)
@@ -62,6 +62,7 @@ PYTHON_LIBRARY=/home/marcello/.pyenv/versions/3.9.0/lib/libpython3.9.a
 PYTHON_SITE_PACKAGES=/home/marcello/dev/shapes_render/.venv/lib/python3.9/site-packages
 # Setup the optix denoiser (optional)
 WITH_CYCLES_DEVICE_OPTIX = TRUE
+WITH_CYCLES_CUDA_BINARIES = TRUE
 # Download optix from NVIDIA
 OPTIX_INCLUDE_DIR=/home/marcello/dev/blender-git/NVIDIA-OptiX-SDK-7.2.0-linux64-x86_64/include
 
