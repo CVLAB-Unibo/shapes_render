@@ -62,6 +62,7 @@ PYTHON_LIBRARY=/home/marcello/.pyenv/versions/3.9.0/lib/libpython3.9.a
 PYTHON_SITE_PACKAGES=/home/marcello/dev/shapes_render/.venv/lib/python3.9/site-packages
 # Setup the optix denoiser (optional)
 WITH_CYCLES_DEVICE_OPTIX = TRUE
+WITH_CYCLES_CUDA_BINARIES = TRUE
 # Download optix from NVIDIA
 OPTIX_INCLUDE_DIR=/home/marcello/dev/blender-git/NVIDIA-OptiX-SDK-7.2.0-linux64-x86_64/include
 
