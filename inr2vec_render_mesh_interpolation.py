@@ -28,10 +28,7 @@ from utils.utils import (
 def main():
 
     path_base = Path("/media/rspezialetti/Data/rspezialetti/projects/inr2vec/qualitatives/")
-    path_input = path_base / "rec_mesh_manifold40/gt/"
-    path_out = path_base / "rec_mesh_manifold40/renders_gt"
-    path_out.mkdir(exist_ok=True, parents=True)
-
+    path_input = path_base / "interp_mesh_manifold40/"
     paths = list(path_input.rglob("*.ply"))
     paths.sort()
 
@@ -54,6 +51,9 @@ def main():
     use_denoiser = True
 
     for path in paths:
+        path_out = path_input / path.parts[-2] / "render"
+        path_out.mkdir(exist_ok=True)
+        path_render = path_out / f"{path.stem}.png"
         # Reset
         remove_objects()
 
