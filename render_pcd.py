@@ -36,12 +36,12 @@ def main():
     loc_light = (0, 0, 2)
     rot_light = (math.radians(0), math.radians(0), math.radians(0))
     energy = 3.0
-    rot_object = (math.radians(0), math.radians(0), math.radians(340))
-    add_plane = True
+    rot_object = (math.radians(0), math.radians(0), math.radians(54))
+    add_plane = False
     devices = [0]
     save_blender = True
     use_denoiser = True
-    base_color = (0.0, 1.0, 0.0, 1.0)
+    base_color = (1.0, 0.0, 0.0, 1.0)
     lens = 85
     plane_only_shadow = False
 
@@ -74,12 +74,11 @@ def main():
     else:
         # Material
         mat = create_material("Material_Right", use_nodes=True, make_node_tree_empty=True)
-        nodes = mat.node_tree.nodes
-        links = mat.node_tree.links
-        output_node = nodes.new(type="ShaderNodeOutputMaterial")
-        principled_node = nodes.new(type="ShaderNodeBsdfPrincipled")
+        output_node = mat.node_tree.nodes.new(type="ShaderNodeOutputMaterial")
+        principled_node = mat.node_tree.nodes.new(type="ShaderNodeBsdfPrincipled")
         set_principled_node(principled_node, base_color=base_color)
-        links.new(principled_node.outputs["BSDF"], output_node.inputs["Surface"])
+
+        mat.node_tree.links.new(principled_node.outputs["BSDF"], output_node.inputs["Surface"])
 
     focus_target_object.data.materials.append(mat)
     # Location Plane
@@ -116,6 +115,7 @@ def main():
 
     if save_blender:
         bpy.ops.wm.save_mainfile()
+    bpy.ops.wm.read_factory_settings()
 
 
 if __name__ == "__main__":

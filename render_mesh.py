@@ -40,7 +40,7 @@ def main():
     remove_objects()
 
     # Rotation Object
-    rot_object = (math.radians(0), math.radians(0), math.radians(30))
+    rot_object = (math.radians(0), math.radians(0), math.radians(54))
 
     # Object
     focus_target_object = load_mesh(path_input)

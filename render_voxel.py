@@ -53,7 +53,7 @@ def main():
     add_plane = True
     save_blender = True
     use_denoiser = True
-    base_color = (0.0, 1.0, 0.0, 1.0)
+    base_color = (0.0, 1.0, 1.0, 1.0)
     lens = 85
     plane_only_shadow = True
 

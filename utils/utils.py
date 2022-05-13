@@ -275,7 +275,7 @@ def set_principled_node_as_rough_blue(principled_node: bpy.types.Node) -> None:
 def set_principled_node_as_glass(principled_node: bpy.types.Node) -> None:
     set_principled_node(
         principled_node=principled_node,
-        base_color=(0.95, 0.95, 0.95, 1.0),
+        base_color=(1.0, 0, 0, 1.0),
         metallic=0.0,
         specular=0.5,
         roughness=0.0,
@@ -288,7 +288,7 @@ def set_principled_node_as_glass(principled_node: bpy.types.Node) -> None:
 
 def set_principled_node(
     principled_node: bpy.types.Node,
-    base_color: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 1.0),
+    base_color: Tuple[float, float, float, float] = (1.0, 0.0, 0.0, 1.0),
     subsurface: float = 0.0,
     subsurface_color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1.0),
     subsurface_radius: Tuple[float, float, float] = (1.0, 0.2, 0.1),
@@ -356,16 +356,19 @@ def load_mesh(path_mesh: Path) -> bpy.types.Object:
 
 
 def pcd_to_sphere(
-    pcd: np.ndarray, radius, offset=(0.0, 0.0, 0.0), scale: float = 1.0
+    pcd: np.ndarray, radius, offset=(0.0, 0.0, 0.0), scale: float = 1.0, subdivision: int = 2
 ) -> bpy.types.Object:
 
+    remove_objects()
     mesh = bmesh.new()
 
-    bpy.ops.mesh.primitive_ico_sphere_add()
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=subdivision)
     sphere_base_mesh = bpy.context.scene.objects["Icosphere"].data
 
     for face in sphere_base_mesh.polygons:
         face.use_smooth = True
+
+    step = 0
 
     for p in pcd:
         location = (p[0] * scale + offset[0], p[1] * scale + offset[1], p[2] * scale + offset[2])
@@ -376,6 +379,7 @@ def pcd_to_sphere(
             vertex.co[0] = vertex.co[0] * radius + location[0]
             vertex.co[1] = vertex.co[1] * radius + location[1]
             vertex.co[2] = vertex.co[2] * radius + location[2]
+            step += 1
 
         if pcd.shape[1] > 3:
             m.vertex_colors.new(name="Col")
@@ -383,6 +387,7 @@ def pcd_to_sphere(
                 vertex_color.color = (p[3], p[4], p[5], 1.0)
 
         mesh.from_mesh(m)
+        del m
 
     mesh_spheres = bpy.data.meshes.new("Mesh")
     mesh.to_mesh(mesh_spheres)
