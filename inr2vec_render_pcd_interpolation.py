@@ -7,20 +7,27 @@ from typing import List
 import bpy
 import numpy as np
 import open3d as o3d
-from utils.utils import (add_track_to_constraint, create_camera, create_light,
-                         create_material, create_plane, pcd_to_sphere,
-                         remove_objects, set_camera_params, set_engine_params,
-                         set_principled_node,
-                         set_principled_node_as_rough_blue, set_render_params)
+
+from utils.utils import (
+    add_track_to_constraint,
+    create_camera,
+    create_light,
+    create_material,
+    create_plane,
+    pcd_to_sphere,
+    remove_objects,
+    set_camera_params,
+    set_engine_params,
+    set_principled_node,
+    set_principled_node_as_rough_blue,
+    set_render_params,
+)
 
 
 def main():
 
-    path_base = Path("/media/rspezialetti/Data/rspezialetti/projects/inr2vec/qualitatives/")
-    path_input = path_base / "rec_pcd_modelnet40/pred"
-    path_out = path_base / "rec_pcd_modelnet40/renders_pred"
-    path_out.mkdir(exist_ok=True, parents=True)
-
+    path_base = Path("../datasets/inr2vec/qualitatives/")
+    path_input = path_base / "interp_pcd_modelnet40/"
     paths = list(path_input.rglob("*.ply"))
     paths.sort()
 
@@ -36,7 +43,7 @@ def main():
     rot_object = (math.radians(0), math.radians(0), math.radians(30))
     add_plane = False
     devices = [0]
-    save_blender = True
+    save_blender = False
     use_denoiser = True
     base_color = (0.6, 0.79, 1.0, 1.0)
     lens = 50
@@ -46,13 +53,14 @@ def main():
     subdivision = 1
 
     for path in paths:
-        time_start = time.time()
+        path_out = path_input / path.parts[-2] / "render"
+        path_out.mkdir(exist_ok=True)
+        path_render = path_out / f"{path.stem}.png"
         # Reset
         remove_objects()
 
         # Object
         pcd = o3d.io.read_point_cloud(str(path))
-        pcd.translate([-2, 0.0, 0.0])
 
         pts = np.asarray(pcd.points)
         pts_temp = copy.deepcopy(pts)
@@ -129,8 +137,6 @@ def main():
 
         if save_blender:
             bpy.ops.wm.save_mainfile(filepath="debug")
-        time_end = time.time() - time_start
-        print(f"Time one shape: {time_end}")
         bpy.ops.wm.read_factory_settings()
 
 

@@ -1,5 +1,6 @@
 import copy
 import math
+import time
 from pathlib import Path
 from typing import List
 
@@ -25,7 +26,7 @@ from utils.utils import (
 
 def main():
 
-    path_base = Path("/media/rspezialetti/Data/rspezialetti/projects/inr2vec/qualitatives/")
+    path_base = Path("../datasets/inr2vec/qualitatives/")
     path_input = path_base / "rec_pcd_modelnet40/gt"
     path_out = path_base / "rec_pcd_modelnet40/renders_gt"
     path_out.mkdir(exist_ok=True, parents=True)
@@ -52,13 +53,16 @@ def main():
     plane_only_shadow = False
     radius_sphere = 0.017
     use_color = False
+    subdivision = 1
 
     for path in paths:
+        time_start = time.time()
         # Reset
         remove_objects()
 
         # Object
         pcd = o3d.io.read_point_cloud(str(path))
+
         pts = np.asarray(pcd.points)
         pts_temp = copy.deepcopy(pts)
         x, y, z = pts_temp[:, 0], pts_temp[:, 1], pts_temp[:, 2]
@@ -70,7 +74,8 @@ def main():
         if len(colors):
             pts = np.concatenate((pts, colors), axis=1)
 
-        focus_target_object = pcd_to_sphere(pts, radius=radius_sphere, scale=1)  # type: ignore
+        print(f"here {len(bpy.data.objects.items())}")
+        focus_target_object = pcd_to_sphere(pts, radius=radius_sphere, scale=1, subdivision=subdivision)  # type: ignore
 
         if pts.shape[1] > 3 and use_color:
             mat = create_material(
@@ -132,7 +137,10 @@ def main():
         bpy.ops.render.render(write_still=True)
 
         if save_blender:
-            bpy.ops.wm.save_mainfile()
+            bpy.ops.wm.save_mainfile(filepath="debug")
+        time_end = time.time() - time_start
+        print(f"Time one shape: {time_end}")
+        bpy.ops.wm.read_factory_settings()
 
 
 if __name__ == "__main__":
